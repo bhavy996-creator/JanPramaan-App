@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'dart:async';
+import 'package:permission_handler/permission_handler.dart';
 
 void main() {
   runApp(const MyApp());
@@ -32,25 +33,30 @@ class _WebViewScreenState extends State<WebViewScreen> {
   bool isConnected = true;
   late StreamSubscription connectivitySubscription;
 
+  void requestLocationPermission() async {
+    await Permission.location.request();
+  }
+
   final String url = "https://janpramaan.vercel.app/"; 
 
   @override
   void initState() {
     super.initState();
+     requestLocationPermission();
 
-    controller = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..loadRequest(Uri.parse(url))
-      ..setNavigationDelegate(
-        NavigationDelegate(
-          onPageStarted: (url) {
-            setState(() => isLoading = true);
-          },
-          onPageFinished: (url) {
-            setState(() => isLoading = false);
-          },
-        ),
-      );
+controller = WebViewController()
+  ..setJavaScriptMode(JavaScriptMode.unrestricted)
+  ..loadRequest(Uri.parse(url))
+  ..setNavigationDelegate(
+    NavigationDelegate(
+      onPageStarted: (url) {
+        setState(() => isLoading = true);
+      },
+      onPageFinished: (url) {
+        setState(() => isLoading = false);
+      },
+    ),
+  );
 
     connectivitySubscription =
         Connectivity().onConnectivityChanged.listen((result) {
