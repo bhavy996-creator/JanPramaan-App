@@ -102,11 +102,25 @@ controller = WebViewController()
         body: isConnected
             ? Stack(
                 children: [
-                  WebViewWidget(controller: controller),
-                  if (isLoading)
-                    const Center(child: CircularProgressIndicator()),
+                  RefreshIndicator(
+  onRefresh: () async {
+    controller.reload();
+  },
+  child: WebViewWidget(controller: controller),
+),
+                   if (isLoading)
+            Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: const [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 10),
+                  Text("Loading JanPramaan..."),
                 ],
-              )
+              ),
+            ),
+        ],
+      )
             : const Center(
                 child: Text(
                   "No Internet Connection",
