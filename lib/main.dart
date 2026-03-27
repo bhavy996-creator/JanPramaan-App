@@ -33,30 +33,34 @@ class _WebViewScreenState extends State<WebViewScreen> {
   bool isConnected = true;
   late StreamSubscription connectivitySubscription;
 
+  final String url = "https://janpramaan.vercel.app/";
+
   void requestLocationPermission() async {
     await Permission.location.request();
   }
 
-  final String url = "https://janpramaan.vercel.app/"; 
-
   @override
   void initState() {
     super.initState();
-     requestLocationPermission();
 
-controller = WebViewController()
-  ..setJavaScriptMode(JavaScriptMode.unrestricted)
-  ..loadRequest(Uri.parse(url))
-  ..setNavigationDelegate(
-    NavigationDelegate(
-      onPageStarted: (url) {
-        setState(() => isLoading = true);
-      },
-      onPageFinished: (url) {
-        setState(() => isLoading = false);
-      },
-    ),
-  );
+    requestLocationPermission();
+
+    controller = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..loadRequest(Uri.parse(url))
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onPageStarted: (url) {
+            setState(() => isLoading = true);
+          },
+          onPageFinished: (url) {
+            setState(() => isLoading = false);
+          },
+          onWebResourceError: (error) {
+            setState(() => isLoading = false);
+          },
+        ),
+      );
 
     connectivitySubscription =
         Connectivity().onConnectivityChanged.listen((result) {
@@ -92,6 +96,7 @@ controller = WebViewController()
         appBar: AppBar(
           title: const Text("JanPramaan"),
           centerTitle: true,
+          elevation: 2,
           actions: [
             IconButton(
               icon: const Icon(Icons.refresh),
@@ -102,25 +107,30 @@ controller = WebViewController()
         body: isConnected
             ? Stack(
                 children: [
-                  RefreshIndicator(
-  onRefresh: () async {
-    controller.reload();
-  },
-  child: WebViewWidget(controller: controller),
-),
-                   if (isLoading)
-            Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: const [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 10),
-                  Text("Loading JanPramaan..."),
+                  WebViewWidget(controller: controller),
+
+                  if (isLoading)
+                    Container(
+                      color: Colors.white,
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: const [
+                            CircularProgressIndicator(),
+                            SizedBox(height: 12),
+                            Text(
+                              "Loading JanPramaan...",
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                 ],
-              ),
-            ),
-        ],
-      )
+              )
             : const Center(
                 child: Text(
                   "No Internet Connection",
