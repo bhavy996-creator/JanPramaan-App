@@ -35,32 +35,35 @@ class _WebViewScreenState extends State<WebViewScreen> {
 
   final String url = "https://janpramaan.vercel.app/";
 
-  void requestLocationPermission() async {
-    await Permission.location.request();
-  }
+  void requestPermissions() async {
+  await Permission.location.request();
+  await Permission.camera.request();
+  await Permission.microphone.request();
+}
 
   @override
   void initState() {
     super.initState();
 
-    requestLocationPermission();
+    requestPermissions();
 
-    controller = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..loadRequest(Uri.parse(url))
-      ..setNavigationDelegate(
-        NavigationDelegate(
-          onPageStarted: (url) {
-            setState(() => isLoading = true);
-          },
-          onPageFinished: (url) {
-            setState(() => isLoading = false);
-          },
-          onWebResourceError: (error) {
-            setState(() => isLoading = false);
-          },
-        ),
-      );
+  controller = WebViewController()
+  ..setJavaScriptMode(JavaScriptMode.unrestricted)
+  ..setBackgroundColor(const Color(0x00000000))
+  ..loadRequest(Uri.parse(url))
+  ..setNavigationDelegate(
+    NavigationDelegate(
+      onPageStarted: (url) {
+        setState(() => isLoading = true);
+      },
+      onPageFinished: (url) {
+        setState(() => isLoading = false);
+      },
+      onWebResourceError: (error) {
+        setState(() => isLoading = false);
+      },
+    ),
+  );
 
     connectivitySubscription =
         Connectivity().onConnectivityChanged.listen((result) {
@@ -69,6 +72,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
       });
     });
   }
+  
 
   @override
   void dispose() {
