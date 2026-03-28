@@ -84,59 +84,54 @@ class _WebViewScreenState extends State<WebViewScreen> {
     return true;
   }
 
-  void _refreshPage() {
-    controller.reload();
-  }
-
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: _onBackPressed,
       child: Scaffold(
-        appBar: AppBar(
-          title: const Text("JanPramaan"),
-          centerTitle: true,
-          elevation: 2,
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.refresh),
-              onPressed: _refreshPage,
-            ),
-          ],
-        ),
-        body: isConnected
-            ? Stack(
-                children: [
-                  WebViewWidget(controller: controller),
-
-                  if (isLoading)
-                    Container(
-                      color: Colors.white,
-                      child: Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: const [
-                            CircularProgressIndicator(),
-                            SizedBox(height: 12),
-                            Text(
-                              "Loading JanPramaan...",
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
+        body: SafeArea(
+          child: isConnected
+              ? RefreshIndicator(
+                  onRefresh: () async {
+                    controller.reload();
+                  },
+                  child: Stack(
+                    children: [
+                      ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        children: [
+                          SizedBox(
+                            height: MediaQuery.of(context).size.height,
+                            child: WebViewWidget(controller: controller),
+                          ),
+                        ],
                       ),
-                    ),
-                ],
-              )
-            : const Center(
-                child: Text(
-                  "No Internet Connection",
-                  style: TextStyle(fontSize: 18),
+
+                      // Loading Overlay
+                      if (isLoading)
+                        Container(
+                          color: Colors.white,
+                          child: const Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                CircularProgressIndicator(),
+                                SizedBox(height: 10),
+                                Text("Loading JanPramaan..."),
+                              ],
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                )
+              : const Center(
+                  child: Text(
+                    "No Internet Connection",
+                    style: TextStyle(fontSize: 18),
+                  ),
                 ),
-              ),
+        ),
       ),
     );
   }
