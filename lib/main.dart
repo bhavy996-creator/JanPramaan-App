@@ -36,6 +36,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
 
   InAppWebViewController? webViewController;
 
+  // 🔥 Request ALL permissions
   void requestPermissions() async {
     await Permission.location.request();
     await Permission.camera.request();
@@ -87,10 +88,13 @@ class _WebViewScreenState extends State<WebViewScreen> {
                     InAppWebView(
                       initialUrlRequest:
                           URLRequest(url: WebUri(url)),
+
+                      // 🔥 IMPORTANT SETTINGS
                       initialSettings: InAppWebViewSettings(
                         javaScriptEnabled: true,
                         mediaPlaybackRequiresUserGesture: false,
                         allowsInlineMediaPlayback: true,
+                        geolocationEnabled: true,
                       ),
 
                       onWebViewCreated: (controller) {
@@ -105,6 +109,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
                         setState(() => isLoading = false);
                       },
 
+                      // 🔥 CAMERA + MIC PERMISSION
                       androidOnPermissionRequest:
                           (controller, origin, resources) async {
                         return PermissionRequestResponse(
@@ -113,9 +118,19 @@ class _WebViewScreenState extends State<WebViewScreen> {
                               PermissionRequestResponseAction.GRANT,
                         );
                       },
+
+                      // 🔥 LOCATION PERMISSION FIX
+                      androidOnGeolocationPermissionsShowPrompt:
+                          (controller, origin) async {
+                        return GeolocationPermissionShowPromptResponse(
+                          origin: origin,
+                          allow: true,
+                          retain: true,
+                        );
+                      },
                     ),
 
-                    // Loading Screen
+                    // 🔥 LOADING SCREEN
                     if (isLoading)
                       Container(
                         color: Colors.white,
@@ -141,6 +156,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
                 ),
         ),
 
+        // 🔥 REFRESH BUTTON
         floatingActionButton: isConnected
             ? FloatingActionButton(
                 onPressed: _refreshPage,
