@@ -91,39 +91,26 @@ class _WebViewScreenState extends State<WebViewScreen> {
       child: Scaffold(
         body: SafeArea(
           child: isConnected
-              ? RefreshIndicator(
-                  onRefresh: () async {
-                    controller.reload();
-                  },
-                  child: Stack(
-                    children: [
-                      ListView(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        children: [
-                          SizedBox(
-                            height: MediaQuery.of(context).size.height,
-                            child: WebViewWidget(controller: controller),
-                          ),
-                        ],
-                      ),
+              ? Stack(
+                  children: [
+                    WebViewWidget(controller: controller),
 
-                      // Loading Overlay
-                      if (isLoading)
-                        Container(
-                          color: Colors.white,
-                          child: const Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                CircularProgressIndicator(),
-                                SizedBox(height: 10),
-                                Text("Loading JanPramaan..."),
-                              ],
-                            ),
+                    // Loading Screen
+                    if (isLoading)
+                      Container(
+                        color: Colors.white,
+                        child: const Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              CircularProgressIndicator(),
+                              SizedBox(height: 10),
+                              Text("Loading JanPramaan..."),
+                            ],
                           ),
                         ),
-                    ],
-                  ),
+                      ),
+                  ],
                 )
               : const Center(
                   child: Text(
@@ -132,6 +119,14 @@ class _WebViewScreenState extends State<WebViewScreen> {
                   ),
                 ),
         ),
+
+        // ✅ Optional Refresh Button (SAFE)
+        floatingActionButton: isConnected
+            ? FloatingActionButton(
+                onPressed: () => controller.reload(),
+                child: const Icon(Icons.refresh),
+              )
+            : null,
       ),
     );
   }
