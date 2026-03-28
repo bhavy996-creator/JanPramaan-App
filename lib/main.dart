@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:webview_flutter/webview_flutter.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'dart:async';
 import 'package:permission_handler/permission_handler.dart';
@@ -28,42 +28,25 @@ class WebViewScreen extends StatefulWidget {
 }
 
 class _WebViewScreenState extends State<WebViewScreen> {
-  late final WebViewController controller;
   bool isLoading = true;
   bool isConnected = true;
   late StreamSubscription connectivitySubscription;
 
   final String url = "https://janpramaan.vercel.app/";
 
+  InAppWebViewController? webViewController;
+
   void requestPermissions() async {
-  await Permission.location.request();
-  await Permission.camera.request();
-  await Permission.microphone.request();
-}
+    await Permission.location.request();
+    await Permission.camera.request();
+    await Permission.microphone.request();
+  }
 
   @override
   void initState() {
     super.initState();
 
     requestPermissions();
-
-  controller = WebViewController()
-  ..setJavaScriptMode(JavaScriptMode.unrestricted)
-  ..setBackgroundColor(const Color(0x00000000))
-  ..loadRequest(Uri.parse(url))
-  ..setNavigationDelegate(
-    NavigationDelegate(
-      onPageStarted: (url) {
-        setState(() => isLoading = true);
-      },
-      onPageFinished: (url) {
-        setState(() => isLoading = false);
-      },
-      onWebResourceError: (error) {
-        setState(() => isLoading = false);
-      },
-    ),
-  );
 
     connectivitySubscription =
         Connectivity().onConnectivityChanged.listen((result) {
@@ -72,7 +55,6 @@ class _WebViewScreenState extends State<WebViewScreen> {
       });
     });
   }
-  
 
   @override
   void dispose() {
@@ -81,11 +63,16 @@ class _WebViewScreenState extends State<WebViewScreen> {
   }
 
   Future<bool> _onBackPressed() async {
-    if (await controller.canGoBack()) {
-      controller.goBack();
+    if (webViewController != null &&
+        await webViewController!.canGoBack()) {
+      webViewController!.goBack();
       return false;
     }
     return true;
+  }
+
+  void _refreshPage() {
+    webViewController?.reload();
   }
 
   @override
@@ -97,7 +84,36 @@ class _WebViewScreenState extends State<WebViewScreen> {
           child: isConnected
               ? Stack(
                   children: [
-                    WebViewWidget(controller: controller),
+                    InAppWebView(
+                      initialUrlRequest:
+                          URLRequest(url: WebUri(url)),
+                      initialSettings: InAppWebViewSettings(
+                        javaScriptEnabled: true,
+                        mediaPlaybackRequiresUserGesture: false,
+                        allowsInlineMediaPlayback: true,
+                      ),
+
+                      onWebViewCreated: (controller) {
+                        webViewController = controller;
+                      },
+
+                      onLoadStart: (controller, url) {
+                        setState(() => isLoading = true);
+                      },
+
+                      onLoadStop: (controller, url) {
+                        setState(() => isLoading = false);
+                      },
+
+                      androidOnPermissionRequest:
+                          (controller, origin, resources) async {
+                        return PermissionRequestResponse(
+                          resources: resources,
+                          action:
+                              PermissionRequestResponseAction.GRANT,
+                        );
+                      },
+                    ),
 
                     // Loading Screen
                     if (isLoading)
@@ -105,7 +121,8 @@ class _WebViewScreenState extends State<WebViewScreen> {
                         color: Colors.white,
                         child: const Center(
                           child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
+                            mainAxisAlignment:
+                                MainAxisAlignment.center,
                             children: [
                               CircularProgressIndicator(),
                               SizedBox(height: 10),
@@ -124,10 +141,9 @@ class _WebViewScreenState extends State<WebViewScreen> {
                 ),
         ),
 
-        // ✅ Optional Refresh Button (SAFE)
         floatingActionButton: isConnected
             ? FloatingActionButton(
-                onPressed: () => controller.reload(),
+                onPressed: _refreshPage,
                 child: const Icon(Icons.refresh),
               )
             : null,
