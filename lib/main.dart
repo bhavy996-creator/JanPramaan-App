@@ -13,9 +13,12 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: WebViewScreen(),
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: const WebViewScreen(),
     );
   }
 }
@@ -33,10 +36,8 @@ class _WebViewScreenState extends State<WebViewScreen> {
   late StreamSubscription connectivitySubscription;
 
   final String url = "https://janpramaan.vercel.app/";
-
   InAppWebViewController? webViewController;
 
-  // 🔥 Request ALL permissions
   void requestPermissions() async {
     await Permission.location.request();
     await Permission.camera.request();
@@ -81,6 +82,19 @@ class _WebViewScreenState extends State<WebViewScreen> {
     return WillPopScope(
       onWillPop: _onBackPressed,
       child: Scaffold(
+        backgroundColor: Colors.white,
+
+        // 🔥 APP BAR (NOW LOOKS LIKE REAL APP)
+        appBar: AppBar(
+          elevation: 2,
+          backgroundColor: Colors.blue,
+          centerTitle: true,
+          title: const Text(
+            "JanPramaan",
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+        ),
+
         body: SafeArea(
           child: isConnected
               ? Stack(
@@ -88,13 +102,11 @@ class _WebViewScreenState extends State<WebViewScreen> {
                     InAppWebView(
                       initialUrlRequest:
                           URLRequest(url: WebUri(url)),
-
-                      // 🔥 IMPORTANT SETTINGS
                       initialSettings: InAppWebViewSettings(
                         javaScriptEnabled: true,
+                        geolocationEnabled: true,
                         mediaPlaybackRequiresUserGesture: false,
                         allowsInlineMediaPlayback: true,
-                        geolocationEnabled: true,
                       ),
 
                       onWebViewCreated: (controller) {
@@ -109,7 +121,6 @@ class _WebViewScreenState extends State<WebViewScreen> {
                         setState(() => isLoading = false);
                       },
 
-                      // 🔥 CAMERA + MIC PERMISSION
                       androidOnPermissionRequest:
                           (controller, origin, resources) async {
                         return PermissionRequestResponse(
@@ -119,7 +130,6 @@ class _WebViewScreenState extends State<WebViewScreen> {
                         );
                       },
 
-                      // 🔥 LOCATION PERMISSION FIX
                       androidOnGeolocationPermissionsShowPrompt:
                           (controller, origin) async {
                         return GeolocationPermissionShowPromptResponse(
@@ -130,18 +140,29 @@ class _WebViewScreenState extends State<WebViewScreen> {
                       },
                     ),
 
-                    // 🔥 LOADING SCREEN
+                    // 🔥 PREMIUM LOADING SCREEN
                     if (isLoading)
                       Container(
                         color: Colors.white,
-                        child: const Center(
+                        child: Center(
                           child: Column(
                             mainAxisAlignment:
                                 MainAxisAlignment.center,
                             children: [
-                              CircularProgressIndicator(),
-                              SizedBox(height: 10),
-                              Text("Loading JanPramaan..."),
+                              Image.asset(
+                                "assets/logo.png",
+                                height: 80,
+                              ),
+                              const SizedBox(height: 20),
+                              const CircularProgressIndicator(),
+                              const SizedBox(height: 10),
+                              const Text(
+                                "Loading...",
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.black54,
+                                ),
+                              ),
                             ],
                           ),
                         ),
@@ -156,11 +177,12 @@ class _WebViewScreenState extends State<WebViewScreen> {
                 ),
         ),
 
-        // 🔥 REFRESH BUTTON
+        // 🔥 BETTER FLOATING BUTTON
         floatingActionButton: isConnected
-            ? FloatingActionButton(
+            ? FloatingActionButton.extended(
                 onPressed: _refreshPage,
-                child: const Icon(Icons.refresh),
+                icon: const Icon(Icons.refresh),
+                label: const Text("Refresh"),
               )
             : null,
       ),
