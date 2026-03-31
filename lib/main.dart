@@ -13,12 +13,9 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return const MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: const WebViewScreen(),
+      home: WebViewScreen(),
     );
   }
 }
@@ -36,7 +33,9 @@ class _WebViewScreenState extends State<WebViewScreen> {
   late StreamSubscription connectivitySubscription;
 
   final String url = "https://janpramaan.vercel.app/";
+
   InAppWebViewController? webViewController;
+  PullToRefreshController? pullToRefreshController;
 
   void requestPermissions() async {
     await Permission.location.request();
@@ -49,6 +48,15 @@ class _WebViewScreenState extends State<WebViewScreen> {
     super.initState();
 
     requestPermissions();
+
+    pullToRefreshController = PullToRefreshController(
+      options: PullToRefreshOptions(
+        color: Colors.blue,
+      ),
+      onRefresh: () async {
+        webViewController?.reload();
+      },
+    );
 
     connectivitySubscription =
         Connectivity().onConnectivityChanged.listen((result) {
@@ -73,33 +81,17 @@ class _WebViewScreenState extends State<WebViewScreen> {
     return true;
   }
 
-  void _refreshPage() {
-    webViewController?.reload();
-  }
-
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: _onBackPressed,
       child: Scaffold(
-        backgroundColor: Colors.white,
-
-        // 🔥 APP BAR (NOW LOOKS LIKE REAL APP)
-        appBar: AppBar(
-          elevation: 2,
-          backgroundColor: Colors.blue,
-          centerTitle: true,
-          title: const Text(
-            "JanPramaan",
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-        ),
-
         body: SafeArea(
           child: isConnected
               ? Stack(
                   children: [
                     InAppWebView(
+                      pullToRefreshController: pullToRefreshController,
                       initialUrlRequest:
                           URLRequest(url: WebUri(url)),
                       initialSettings: InAppWebViewSettings(
@@ -117,8 +109,13 @@ class _WebViewScreenState extends State<WebViewScreen> {
                         setState(() => isLoading = true);
                       },
 
-                      onLoadStop: (controller, url) {
+                      onLoadStop: (controller, url) async {
                         setState(() => isLoading = false);
+                        pullToRefreshController?.endRefreshing();
+                      },
+
+                      onLoadError: (controller, url, code, message) {
+                        pullToRefreshController?.endRefreshing();
                       },
 
                       androidOnPermissionRequest:
@@ -140,7 +137,6 @@ class _WebViewScreenState extends State<WebViewScreen> {
                       },
                     ),
 
-                    // 🔥 PREMIUM LOADING SCREEN
                     if (isLoading)
                       Container(
                         color: Colors.white,
@@ -151,18 +147,10 @@ class _WebViewScreenState extends State<WebViewScreen> {
                             children: [
                               Image.asset(
                                 "assets/logo.png",
-                                height: 80,
+                                height: 70,
                               ),
                               const SizedBox(height: 20),
                               const CircularProgressIndicator(),
-                              const SizedBox(height: 10),
-                              const Text(
-                                "Loading...",
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.black54,
-                                ),
-                              ),
                             ],
                           ),
                         ),
@@ -172,19 +160,10 @@ class _WebViewScreenState extends State<WebViewScreen> {
               : const Center(
                   child: Text(
                     "No Internet Connection",
-                    style: TextStyle(fontSize: 18),
+                    style: TextStyle(fontSize: 16),
                   ),
                 ),
         ),
-
-        // 🔥 BETTER FLOATING BUTTON
-        floatingActionButton: isConnected
-            ? FloatingActionButton.extended(
-                onPressed: _refreshPage,
-                icon: const Icon(Icons.refresh),
-                label: const Text("Refresh"),
-              )
-            : null,
       ),
     );
   }
